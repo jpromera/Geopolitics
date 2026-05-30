@@ -1,4 +1,17 @@
 exports.handler = async (event) => {
+
+  if (event.httpMethod === "OPTIONS") {
+    return {
+      statusCode: 200,
+      headers: {
+        "Access-Control-Allow-Origin": "*",
+        "Access-Control-Allow-Headers": "Content-Type",
+        "Access-Control-Allow-Methods": "POST, OPTIONS",
+      },
+      body: "",
+    };
+  }
+
   if (event.httpMethod !== "POST") {
     return { statusCode: 405, body: "Method Not Allowed" };
   }
@@ -7,7 +20,10 @@ exports.handler = async (event) => {
   if (!apiKey) {
     return {
       statusCode: 500,
-      headers: { "Content-Type": "application/json" },
+      headers: {
+        "Content-Type": "application/json",
+        "Access-Control-Allow-Origin": "*",
+      },
       body: JSON.stringify({ error: "API key no configurada. Anade ANTHROPIC_API_KEY en Netlify." }),
     };
   }
@@ -77,7 +93,10 @@ Rules: exactly 8 developments, exactly 5 watchlist items, probabilities are inte
       const errorText = await response.text();
       return {
         statusCode: response.status,
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+          "Access-Control-Allow-Origin": "*",
+        },
         body: JSON.stringify({ error: "Error de Anthropic: " + errorText }),
       };
     }
@@ -95,18 +114,26 @@ Rules: exactly 8 developments, exactly 5 watchlist items, probabilities are inte
       if (first !== -1 && last !== -1) {
         parsed = JSON.parse(fullText.slice(first, last + 1));
       }
-    } catch (e) { parsed = null; }
+    } catch (e) {
+      parsed = null;
+    }
 
     return {
       statusCode: 200,
-      headers: { "Content-Type": "application/json", "Access-Control-Allow-Origin": "*" },
+      headers: {
+        "Content-Type": "application/json",
+        "Access-Control-Allow-Origin": "*",
+      },
       body: JSON.stringify(parsed ? { data: parsed } : { raw: fullText, parseError: true }),
     };
 
   } catch (err) {
     return {
       statusCode: 500,
-      headers: { "Content-Type": "application/json" },
+      headers: {
+        "Content-Type": "application/json",
+        "Access-Control-Allow-Origin": "*",
+      },
       body: JSON.stringify({ error: "Error interno: " + err.message }),
     };
   }
