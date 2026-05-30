@@ -1,19 +1,17 @@
-// ─────────────────────────────────────────────────────────────
-//  FUNCION DE FONDO  ·  GLOBAL & WIRE
-//  El nombre TERMINA en "-background": Netlify la trata como tarea
-//  de fondo y le da hasta 15 minutos (las normales se cortan a ~10s).
-//  Hace la llamada a Claude con busqueda web y guarda el resultado
-//  en el almacen (Netlify Blobs) bajo el identificador del trabajo.
-// ─────────────────────────────────────────────────────────────
+const { getStore } = require("@netlify/blobs");
 
-import { getStore } from "@netlify/blobs";
-
-export default async (request) => {
+exports.handler = async (event) => {
   let jobId = "unknown";
-  const store = getStore("briefs");
+  let store;
 
   try {
-    const body = await request.json();
+    store = getStore("briefs");
+  } catch (e) {
+    return { statusCode: 202 };
+  }
+
+  try {
+    const body = JSON.parse(event.body || "{}");
     jobId = body.jobId || "unknown";
 
     const apiKey = process.env.ANTHROPIC_API_KEY;
@@ -22,56 +20,54 @@ export default async (request) => {
         status: "error",
         error: "API key no configurada. Anade ANTHROPIC_API_KEY en Netlify -> Environment variables.",
       });
-      return;
+      return { statusCode: 202 };
     }
 
-    // Marca el trabajo como "en curso"
     await store.setJSON(jobId, { status: "pending" });
 
-    const ITEM_COUNT = 8; // numero de noticias (cambialo si quieres)
+    const ITEM_COUNT = 8;
 
     const today = new Date().toLocaleDateString("en-GB", {
       weekday: "long", year: "numeric", month: "long", day: "numeric",
     });
 
-    const prompt = `You are a senior geopolitical analyst with thirty years' standing, in the tradition of Mackinder, Spykman, Kissinger and Brzezinski, writing for an international wire service.
+    const prompt = `You are a senior geopolitical analyst with thirty years standing, in the tradition of Mackinder, Spykman, Kissinger and Brzezinski, writing for an international wire service.
 
 TASK: Use web search to research the world's most significant geopolitical developments RIGHT NOW (${today}). Triangulate load-bearing facts across at least two independent sources. Then produce a decision-grade intelligence brief.
 
-Select exactly ${ITEM_COUNT} developments that genuinely move the strategic board. Rank them by relevance. Cover at least SIX distinct macro-regions and de-centre from the usual Western focus. Include at least TWO items about small-but-pivotal states or chokepoints.
+Select exactly ${ITEM_COUNT} developments that genuinely move the strategic board. Rank them by relevance. Cover at least SIX distinct macro-regions. Include at least TWO items about small-but-pivotal states or chokepoints.
 
-OUTPUT FORMAT — CRITICAL:
+OUTPUT FORMAT - CRITICAL:
 Respond with ONE valid JSON object and NOTHING ELSE. No preamble, no markdown fences, no commentary. The JSON must match this exact schema:
 
 {
   "edition_date": "${today}",
-  "panorama": "One authoritative paragraph (60-90 words): the master narrative connecting this period's developments — the single most important structural shift on the board right now.",
+  "panorama": "One authoritative paragraph (60-90 words).",
   "developments": [
     {
       "rank": 1,
       "region": "exactly one of: North America | Europe | Russia & Post-Soviet | East Asia | South & Central Asia | Southeast Asia & Pacific | Middle East & North Africa | Sub-Saharan Africa | Latin America | Maritime Commons",
       "country": "Primary country/place, short",
       "headline": "Sharp wire-style headline in Title Case, max 12 words",
-      "what_happened": "2-3 sentences, facts only, with approximate dates.",
+      "what_happened": "2-3 sentences, facts only.",
       "why_it_matters": "2-3 sentences on strategic significance.",
       "reading": "2-3 sentences read through geography, power and history.",
       "scenarios": [
         { "label": "Most-likely path (short)", "probability": 60 },
         { "label": "Alternative path (short)", "probability": 30 }
       ],
-      "exposed_sectors": ["Sector or listed company 1", "Sector or listed company 2"],
+      "exposed_sectors": ["Sector or company 1", "Sector or company 2"],
       "confidence": "exactly one of: High | Medium | Low",
-      "memorable_fact": "One verifiable, memorable fact (the dato para recordar)."
+      "memorable_fact": "One verifiable memorable fact."
     }
   ],
   "watchlist": [
-    "Development to monitor in the next 2-4 weeks (1 sentence).",
-    "..."
+    "Development to monitor in the next 2-4 weeks."
   ],
-  "sources_note": "One sentence on the source base used (e.g. wires, institutes, primary data)."
+  "sources_note": "One sentence on sources used."
 }
 
-Rules: ${ITEM_COUNT} developments. 5 watchlist items. Probabilities are integers. Be precise, non-partisan, calm — explain rather than alarm. British English. Remember: output ONLY the JSON object.`;
+Rules: ${ITEM_COUNT} developments. 5 watchlist items. Probabilities are integers. British English. Output ONLY the JSON object.`;
 
     const response = await fetch("https://api.anthropic.com/v1/messages", {
       method: "POST",
@@ -92,9 +88,9 @@ Rules: ${ITEM_COUNT} developments. 5 watchlist items. Probabilities are integers
       const errorText = await response.text();
       await store.setJSON(jobId, {
         status: "error",
-        error: `Error de la API de Anthropic: ${errorText}`,
+        error: "Error de la API de Anthropic: " + errorText,
       });
-      return;
+      return { statusCode: 202 };
     }
 
     const data = await response.json();
@@ -119,11 +115,12 @@ Rules: ${ITEM_COUNT} developments. 5 watchlist items. Probabilities are integers
     } else {
       await store.setJSON(jobId, { status: "done", raw: fullText, parseError: true });
     }
+
   } catch (err) {
     try {
-      await store.setJSON(jobId, { status: "error", error: `Error interno: ${err.message}` });
-    } catch (e) {
-      // si ni siquiera podemos escribir, no hay mas que hacer
-    }
+      await store.setJSON(jobId, { status: "error", error: "Error interno: " + err.message });
+    } catch (e) {}
   }
+
+  return { statusCode: 202 };
 };
