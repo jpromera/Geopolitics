@@ -1,0 +1,9 @@
+{
+  "name": "global-wire",
+  "version": "2.0.0",
+  "private": true,
+  "description": "Geopolitical intelligence brief powered by Claude",
+  "dependencies": {
+    "@netlify/blobs": "^8.1.0"
+  }
+}

@@ -1,0 +1,663 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>GLOBAL WIRE — Geopolitical Intelligence Desk</title>
+
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,600;9..144,900&family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;1,6..72,400&family=Archivo:wght@400;500;600;700&family=Archivo+Expanded:wght@600;700;800&display=swap" rel="stylesheet" />
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+
+<style>
+:root{
+  --ink:#0e1217;          /* near-black navy */
+  --ink-2:#161c24;
+  --paper:#f6f2ea;        /* warm newsprint */
+  --paper-2:#efe9dd;
+  --card:#fbf8f2;
+  --wire:#b3121b;         /* signal red */
+  --wire-dk:#8a0e15;
+  --brass:#a07d2c;        /* brass accent */
+  --rule:#d8cfbd;
+  --rule-dk:#c3b89f;
+  --muted:#6c6354;
+  --ink-soft:#2a2a26;
+  /* confidence */
+  --c-high:#1d6b4c;
+  --c-med:#a87b16;
+  --c-low:#9a2b2b;
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth}
+body{
+  background:var(--paper);
+  color:var(--ink-soft);
+  font-family:'Newsreader',Georgia,serif;
+  font-size:17px;line-height:1.7;
+  -webkit-font-smoothing:antialiased;
+}
+::selection{background:var(--wire);color:#fff}
+
+/* ════ UTILITY BAR ════ */
+.utility{
+  background:var(--ink);color:rgba(246,242,234,.72);
+  font-family:'Archivo',sans-serif;font-size:11px;font-weight:500;
+  letter-spacing:.16em;text-transform:uppercase;
+  border-bottom:1px solid rgba(160,125,44,.3);
+}
+.utility-inner{
+  max-width:1180px;margin:0 auto;padding:8px 28px;
+  display:flex;justify-content:space-between;align-items:center;gap:14px;flex-wrap:wrap;
+}
+.utility .dot{display:inline-block;width:7px;height:7px;border-radius:50%;background:var(--wire);
+  margin-right:8px;vertical-align:middle;animation:pulse 1.8s infinite}
+@keyframes pulse{0%,100%{opacity:1;box-shadow:0 0 0 0 rgba(179,18,27,.5)}50%{opacity:.5;box-shadow:0 0 0 5px rgba(179,18,27,0)}}
+#clock{color:var(--brass)}
+
+/* ════ MASTHEAD ════ */
+.masthead{
+  background:var(--ink);color:var(--paper);
+  position:relative;overflow:hidden;
+  border-bottom:3px solid var(--wire);
+}
+.masthead::before{
+  content:'';position:absolute;inset:0;
+  background:
+    radial-gradient(circle at 12% 20%,rgba(160,125,44,.10),transparent 40%),
+    radial-gradient(circle at 88% 80%,rgba(179,18,27,.10),transparent 45%);
+  pointer-events:none;
+}
+/* faint world-grid texture */
+.masthead::after{
+  content:'';position:absolute;inset:0;opacity:.05;pointer-events:none;
+  background-image:
+    linear-gradient(rgba(246,242,234,.6) 1px,transparent 1px),
+    linear-gradient(90deg,rgba(246,242,234,.6) 1px,transparent 1px);
+  background-size:54px 54px;
+  mask-image:radial-gradient(ellipse 70% 80% at 50% 40%,#000,transparent);
+}
+.masthead-inner{
+  max-width:1180px;margin:0 auto;padding:34px 28px 26px;
+  position:relative;z-index:2;text-align:center;
+}
+.kicker{
+  font-family:'Archivo',sans-serif;font-size:11px;font-weight:600;
+  letter-spacing:.42em;text-transform:uppercase;color:var(--brass);
+  margin-bottom:14px;
+}
+.nameplate{
+  font-family:'Fraunces',serif;font-weight:900;
+  font-size:clamp(2.6rem,7vw,5.4rem);line-height:.92;
+  color:#fff;letter-spacing:-.01em;
+}
+.nameplate .amp{color:var(--wire);font-style:italic;font-weight:400}
+.tagline{
+  font-family:'Newsreader',serif;font-style:italic;
+  font-size:clamp(.95rem,1.6vw,1.15rem);color:rgba(246,242,234,.62);
+  margin-top:14px;
+}
+.masthead-rules{display:flex;align-items:center;gap:16px;max-width:560px;margin:20px auto 0}
+.masthead-rules .line{flex:1;height:1px;background:linear-gradient(90deg,transparent,var(--rule-dk),transparent)}
+.masthead-rules .badge{
+  font-family:'Archivo',sans-serif;font-size:10px;font-weight:600;letter-spacing:.3em;
+  text-transform:uppercase;color:rgba(246,242,234,.55);white-space:nowrap;
+}
+
+/* ════ TICKER ════ */
+.ticker{
+  background:var(--wire);color:#fff;overflow:hidden;
+  font-family:'Archivo',sans-serif;font-size:12.5px;font-weight:600;
+  letter-spacing:.05em;height:38px;display:flex;align-items:center;
+  border-bottom:1px solid var(--wire-dk);
+}
+.ticker .label{
+  background:var(--ink);color:var(--wire);height:100%;display:flex;align-items:center;
+  padding:0 18px;letter-spacing:.2em;text-transform:uppercase;font-size:11px;
+  white-space:nowrap;flex-shrink:0;border-right:2px solid var(--wire);
+}
+.ticker-track{display:flex;white-space:nowrap;will-change:transform;animation:scroll 42s linear infinite}
+.ticker:hover .ticker-track{animation-play-state:paused}
+.ticker-track span{padding:0 26px;position:relative}
+.ticker-track span::after{content:'';position:absolute;right:0;top:50%;transform:translateY(-50%);
+  width:5px;height:5px;border-radius:50%;background:rgba(255,255,255,.6)}
+@keyframes scroll{from{transform:translateX(0)}to{transform:translateX(-50%)}}
+.ticker.idle .ticker-track{animation:none}
+.ticker.idle .ticker-track span::after{display:none}
+
+/* ════ MAIN ════ */
+main{max-width:1180px;margin:0 auto;padding:0 28px}
+
+/* ════ CONTROL DECK ════ */
+.deck{
+  display:flex;align-items:center;justify-content:space-between;gap:24px;
+  padding:30px 0;border-bottom:1px solid var(--rule);flex-wrap:wrap;
+}
+.deck-meta{font-family:'Archivo',sans-serif;font-size:12px;letter-spacing:.12em;
+  text-transform:uppercase;color:var(--muted);line-height:1.9}
+.deck-meta b{color:var(--ink);font-weight:700}
+#generateBtn{
+  font-family:'Archivo Expanded','Archivo',sans-serif;font-weight:700;
+  font-size:14px;letter-spacing:.08em;text-transform:uppercase;
+  background:var(--wire);color:#fff;border:none;
+  padding:16px 34px;cursor:pointer;position:relative;overflow:hidden;
+  transition:background .2s,transform .15s,box-shadow .2s;
+  box-shadow:0 4px 0 var(--wire-dk);
+}
+#generateBtn:hover:not(:disabled){background:var(--wire-dk);transform:translateY(-1px);
+  box-shadow:0 5px 0 #5e0a0f}
+#generateBtn:active:not(:disabled){transform:translateY(3px);box-shadow:0 1px 0 var(--wire-dk)}
+#generateBtn:disabled{background:var(--muted);box-shadow:0 4px 0 #4a4339;cursor:wait}
+#generateBtn .bi{margin-right:9px}
+
+/* ════ STATUS / LOADING ════ */
+#status{padding:0;min-height:0;transition:all .3s}
+#status.show{padding:46px 0;text-align:center}
+.loader{display:inline-flex;flex-direction:column;align-items:center;gap:18px}
+.loader .scope{
+  width:54px;height:54px;border:3px solid var(--rule);border-top-color:var(--wire);
+  border-radius:50%;animation:spin .9s linear infinite;position:relative;
+}
+.loader .scope::after{content:'';position:absolute;inset:9px;border:2px solid transparent;
+  border-bottom-color:var(--brass);border-radius:50%;animation:spin 1.4s linear infinite reverse}
+@keyframes spin{to{transform:rotate(360deg)}}
+.loader .msg{font-family:'Archivo',sans-serif;font-size:13px;letter-spacing:.14em;
+  text-transform:uppercase;color:var(--muted)}
+#status.error{padding:36px 0;text-align:center}
+.err-box{display:inline-block;max-width:620px;border:1px solid var(--wire);
+  border-left:5px solid var(--wire);background:#fdeceb;padding:18px 24px;
+  font-family:'Archivo',sans-serif;font-size:14px;color:var(--wire-dk);text-align:left;line-height:1.55}
+
+/* ════ REPORT ════ */
+#report{padding:8px 0 80px}
+#report.hidden{display:none}
+
+/* — Panorama hero — */
+.panorama{
+  margin:46px 0 10px;padding:38px 42px;position:relative;
+  background:var(--ink);color:var(--paper);overflow:hidden;
+}
+.panorama::before{content:'';position:absolute;left:0;top:0;bottom:0;width:5px;background:var(--wire)}
+.panorama .lbl{font-family:'Archivo',sans-serif;font-size:11px;font-weight:600;
+  letter-spacing:.34em;text-transform:uppercase;color:var(--brass);margin-bottom:16px}
+.panorama p{font-family:'Fraunces',serif;font-weight:400;font-size:clamp(1.25rem,2.3vw,1.7rem);
+  line-height:1.42;color:#fff}
+.panorama .date{font-family:'Archivo',sans-serif;font-size:12px;letter-spacing:.16em;
+  text-transform:uppercase;color:rgba(246,242,234,.5);margin-top:20px}
+
+/* — Dashboard — */
+.dash{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:0;
+  border:1px solid var(--rule);border-bottom:none;margin-top:34px}
+.stat{padding:24px 26px;border-bottom:1px solid var(--rule);border-right:1px solid var(--rule)}
+.stat:last-child{border-right:none}
+.stat .n{font-family:'Fraunces',serif;font-weight:900;font-size:3rem;line-height:1;color:var(--ink)}
+.stat .n small{font-size:1.1rem;color:var(--muted);font-weight:600}
+.stat .t{font-family:'Archivo',sans-serif;font-size:11px;font-weight:600;letter-spacing:.16em;
+  text-transform:uppercase;color:var(--muted);margin-top:10px}
+
+.charts{display:grid;grid-template-columns:1.5fr 1fr;gap:0;border:1px solid var(--rule);
+  border-top:none;margin-bottom:10px}
+.chart-cell{padding:26px 30px}
+.chart-cell:first-child{border-right:1px solid var(--rule)}
+.chart-cell h4{font-family:'Archivo',sans-serif;font-size:11px;font-weight:700;
+  letter-spacing:.2em;text-transform:uppercase;color:var(--ink);margin-bottom:18px}
+.chart-wrap{position:relative;height:230px}
+
+/* — Section heading — */
+.sec-head{display:flex;align-items:baseline;gap:18px;margin:54px 0 8px}
+.sec-head h2{font-family:'Fraunces',serif;font-weight:900;font-size:1.9rem;color:var(--ink);
+  letter-spacing:-.01em;white-space:nowrap}
+.sec-head .rule{flex:1;height:2px;background:var(--ink);align-self:center}
+.sec-head .count{font-family:'Archivo',sans-serif;font-size:12px;font-weight:600;letter-spacing:.14em;
+  text-transform:uppercase;color:var(--wire)}
+
+/* — Dispatch cards — */
+.dispatches{display:grid;gap:0;border-top:1px solid var(--rule)}
+.dispatch{
+  display:grid;grid-template-columns:96px 1fr;gap:0;
+  border-bottom:1px solid var(--rule);background:var(--card);
+  opacity:0;transform:translateY(16px);
+}
+.dispatch.in{animation:rise .5s ease forwards}
+@keyframes rise{to{opacity:1;transform:translateY(0)}}
+.dispatch:hover{background:#fff}
+.d-rail{
+  background:var(--paper-2);border-right:1px solid var(--rule);
+  display:flex;flex-direction:column;align-items:center;padding:22px 8px;gap:10px;
+}
+.d-rank{font-family:'Fraunces',serif;font-weight:900;font-size:2.4rem;line-height:.85;color:var(--ink)}
+.d-rank small{display:block;font-size:.7rem;color:var(--muted);font-weight:600;letter-spacing:.1em}
+.region-chip{font-family:'Archivo',sans-serif;font-size:9px;font-weight:700;letter-spacing:.08em;
+  text-transform:uppercase;color:#fff;padding:4px 7px;text-align:center;line-height:1.25;border-radius:2px}
+.d-body{padding:22px 30px 26px}
+.d-top{display:flex;align-items:center;justify-content:space-between;gap:14px;margin-bottom:8px;flex-wrap:wrap}
+.d-country{font-family:'Archivo',sans-serif;font-size:11px;font-weight:700;letter-spacing:.22em;
+  text-transform:uppercase;color:var(--wire)}
+.conf{font-family:'Archivo',sans-serif;font-size:10px;font-weight:700;letter-spacing:.12em;
+  text-transform:uppercase;padding:4px 10px;border-radius:999px;display:inline-flex;align-items:center;gap:6px}
+.conf::before{content:'';width:7px;height:7px;border-radius:50%;background:currentColor}
+.conf.high{color:var(--c-high);background:#e3f0e9}
+.conf.medium{color:var(--c-med);background:#f6eed6}
+.conf.low{color:var(--c-low);background:#f6e0e0}
+.d-headline{font-family:'Fraunces',serif;font-weight:600;font-size:1.55rem;line-height:1.18;
+  color:var(--ink);margin-bottom:16px;letter-spacing:-.005em}
+.d-field{margin-bottom:13px}
+.d-field .k{font-family:'Archivo',sans-serif;font-size:10px;font-weight:700;letter-spacing:.18em;
+  text-transform:uppercase;color:var(--muted);margin-bottom:3px}
+.d-field .v{font-size:15.5px;color:var(--ink-soft);line-height:1.62}
+.d-grid{display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-top:4px}
+@media(max-width:640px){.d-grid{grid-template-columns:1fr}}
+
+/* scenarios */
+.scenarios{margin-top:14px}
+.scenarios .k{font-family:'Archivo',sans-serif;font-size:10px;font-weight:700;letter-spacing:.18em;
+  text-transform:uppercase;color:var(--muted);margin-bottom:8px}
+.scen{margin-bottom:9px}
+.scen-top{display:flex;justify-content:space-between;font-size:13.5px;margin-bottom:3px}
+.scen-top .lab{color:var(--ink-soft)}
+.scen-top .pct{font-family:'Archivo',sans-serif;font-weight:700;color:var(--ink)}
+.scen-bar{height:7px;background:var(--paper-2);border:1px solid var(--rule);overflow:hidden}
+.scen-fill{height:100%;background:linear-gradient(90deg,var(--brass),var(--wire));width:0;
+  transition:width 1s cubic-bezier(.2,.8,.2,1)}
+
+/* sectors */
+.sectors{margin-top:14px}
+.sectors .k{font-family:'Archivo',sans-serif;font-size:10px;font-weight:700;letter-spacing:.18em;
+  text-transform:uppercase;color:var(--muted);margin-bottom:8px}
+.chips{display:flex;flex-wrap:wrap;gap:7px}
+.chip{font-family:'Archivo',sans-serif;font-size:11.5px;font-weight:600;
+  background:var(--paper-2);border:1px solid var(--rule-dk);color:var(--ink-soft);
+  padding:5px 11px;border-radius:2px}
+
+/* memorable fact */
+.fact{margin-top:18px;padding:14px 18px;background:var(--ink);color:var(--paper);position:relative}
+.fact::before{content:'\201C';position:absolute;left:8px;top:-6px;font-family:'Fraunces',serif;
+  font-size:3rem;color:var(--wire);opacity:.6}
+.fact .k{font-family:'Archivo',sans-serif;font-size:9px;font-weight:700;letter-spacing:.24em;
+  text-transform:uppercase;color:var(--brass);margin-bottom:5px;margin-left:22px}
+.fact .v{font-family:'Newsreader',serif;font-style:italic;font-size:15px;line-height:1.5;margin-left:22px}
+
+/* — Watchlist — */
+.watch{margin-top:54px;border:2px solid var(--ink);background:var(--card)}
+.watch-head{background:var(--ink);color:var(--paper);padding:16px 26px;
+  font-family:'Archivo Expanded','Archivo',sans-serif;font-weight:700;font-size:14px;
+  letter-spacing:.14em;text-transform:uppercase;display:flex;align-items:center;gap:12px}
+.watch-head::before{content:'';width:9px;height:9px;background:var(--wire);animation:pulse 1.8s infinite}
+.watch ul{list-style:none;padding:8px 0}
+.watch li{display:flex;gap:16px;padding:14px 26px;border-bottom:1px solid var(--rule);font-size:15.5px}
+.watch li:last-child{border-bottom:none}
+.watch li .n{font-family:'Fraunces',serif;font-weight:900;color:var(--wire);font-size:1.3rem;line-height:1;flex-shrink:0}
+
+/* — Colophon / disclaimer — */
+.colophon{margin-top:40px;padding:22px 26px;border:1px solid var(--rule);background:var(--paper-2);
+  font-family:'Newsreader',serif;font-style:italic;font-size:13.5px;color:var(--muted);line-height:1.6}
+.colophon b{font-style:normal;font-family:'Archivo',sans-serif;font-size:10px;font-weight:700;
+  letter-spacing:.2em;text-transform:uppercase;color:var(--ink);display:block;margin-bottom:6px}
+
+/* — Fallback raw — */
+.raw-fallback{margin-top:40px;padding:30px;border:1px solid var(--rule);background:var(--card)}
+.raw-fallback h1,.raw-fallback h2,.raw-fallback h3{font-family:'Fraunces',serif;color:var(--ink)}
+.raw-fallback h2{color:var(--wire);font-size:1.2rem;margin-top:24px;text-transform:uppercase;letter-spacing:.08em}
+
+/* ════ FOOTER ════ */
+footer{background:var(--ink);color:rgba(246,242,234,.45);margin-top:60px;
+  border-top:3px solid var(--wire)}
+.footer-inner{max-width:1180px;margin:0 auto;padding:28px;display:flex;
+  justify-content:space-between;align-items:center;gap:14px;flex-wrap:wrap;
+  font-family:'Archivo',sans-serif;font-size:11px;letter-spacing:.12em;text-transform:uppercase}
+.footer-inner .brand{font-family:'Fraunces',serif;font-weight:900;font-size:1.1rem;
+  color:var(--paper);letter-spacing:0;text-transform:none}
+.footer-inner .brand .amp{color:var(--wire);font-style:italic}
+
+@media(max-width:760px){
+  .charts{grid-template-columns:1fr}
+  .chart-cell:first-child{border-right:none;border-bottom:1px solid var(--rule)}
+  .dispatch{grid-template-columns:64px 1fr}
+  .d-rank{font-size:1.8rem}
+  .panorama{padding:28px 24px}
+}
+</style>
+</head>
+<body>
+
+<!-- UTILITY BAR -->
+<div class="utility">
+  <div class="utility-inner">
+    <div><span class="dot"></span>International Desk · Brussels Bureau</div>
+    <div id="clock">—</div>
+  </div>
+</div>
+
+<!-- MASTHEAD -->
+<header class="masthead">
+  <div class="masthead-inner">
+    <div class="kicker">Geopolitical Intelligence · Decision-Grade Analysis</div>
+    <div class="nameplate">GLOBAL <span class="amp">&amp;</span> WIRE</div>
+    <div class="tagline">Reading the world the way a strategist does — geography, power, and the long durée.</div>
+    <div class="masthead-rules">
+      <span class="line"></span>
+      <span class="badge">AI-Powered · Live Brief</span>
+      <span class="line"></span>
+    </div>
+  </div>
+</header>
+
+<!-- TICKER -->
+<div class="ticker idle" id="ticker">
+  <div class="label">Wire</div>
+  <div class="ticker-track" id="tickerTrack">
+    <span>Press “Generate Brief” to scan the global situation</span>
+    <span>Live analysis powered by Claude</span>
+    <span>Coverage balanced across six macro-regions</span>
+    <span>Press “Generate Brief” to scan the global situation</span>
+    <span>Live analysis powered by Claude</span>
+    <span>Coverage balanced across six macro-regions</span>
+  </div>
+</div>
+
+<main>
+
+  <!-- CONTROL DECK -->
+  <div class="deck">
+    <div class="deck-meta">
+      Edition <b id="editionNo">—</b> &nbsp;·&nbsp; <b id="editionDate">Awaiting generation</b><br/>
+      Status: <b id="deskStatus">Standby</b>
+    </div>
+    <button id="generateBtn" onclick="generateReport()">
+      <span class="bi">◉</span> Generate Brief
+    </button>
+  </div>
+
+  <!-- STATUS -->
+  <div id="status"></div>
+
+  <!-- REPORT -->
+  <div id="report" class="hidden"></div>
+
+</main>
+
+<footer>
+  <div class="footer-inner">
+    <div class="brand">GLOBAL <span class="amp">&amp;</span> WIRE</div>
+    <div>Powered by Claude · Anthropic &nbsp;·&nbsp; Analysis, not investment advice</div>
+  </div>
+</footer>
+
+<script>
+if(window.marked&&marked.setOptions){marked.setOptions({breaks:true,gfm:true});}
+
+/* ── Live clock ── */
+function tick(){
+  const now=new Date();
+  const opts={hour:'2-digit',minute:'2-digit',second:'2-digit',hour12:false,timeZoneName:'short'};
+  document.getElementById('clock').textContent=now.toLocaleTimeString('en-GB',opts)+' · '+
+    now.toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'numeric'}).toUpperCase();
+}
+tick();setInterval(tick,1000);
+
+/* ── Region colour map ── */
+const REGION_COLORS={
+  'North America':'#2563a8',
+  'Europe':'#1f3a5f',
+  'Russia & Post-Soviet':'#7a1d2e',
+  'East Asia':'#b3121b',
+  'South & Central Asia':'#c2691a',
+  'Southeast Asia & Pacific':'#0f7a6e',
+  'Middle East & North Africa':'#a07d2c',
+  'Sub-Saharan Africa':'#2e7d32',
+  'Latin America':'#6a3d9a',
+  'Maritime Commons':'#1597a5'
+};
+function regionColor(r){
+  if(REGION_COLORS[r]) return REGION_COLORS[r];
+  const k=Object.keys(REGION_COLORS).find(key=>r&&r.toLowerCase().includes(key.split(' ')[0].toLowerCase()));
+  return k?REGION_COLORS[k]:'#555';
+}
+
+/* ── Loading message rotation ── */
+const LOAD_MSGS=[
+  'Scanning global intelligence feeds',
+  'Searching the periphery, not just the centre',
+  'Triangulating across independent sources',
+  'Reading the terrain — geography first',
+  'Ranking developments by strategic weight',
+  'Composing the dispatch'
+];
+let loadTimer=null;
+
+function setLoading(on){
+  const s=document.getElementById('status');
+  const btn=document.getElementById('generateBtn');
+  document.getElementById('deskStatus').textContent=on?'Live — analysing':'Standby';
+  if(on){
+    s.className='show';
+    let i=0;
+    s.innerHTML='<div class="loader"><div class="scope"></div><div class="msg" id="loadMsg">'+LOAD_MSGS[0]+'</div></div>';
+    loadTimer=setInterval(()=>{i=(i+1)%LOAD_MSGS.length;
+      const m=document.getElementById('loadMsg');if(m)m.textContent=LOAD_MSGS[i];},2600);
+    btn.disabled=true;btn.innerHTML='<span class="bi">◌</span> Working…';
+  }else{
+    s.className='';s.innerHTML='';
+    if(loadTimer)clearInterval(loadTimer);
+    btn.disabled=false;btn.innerHTML='<span class="bi">↻</span> Regenerate Brief';
+  }
+}
+
+function showError(msg){
+  setLoading(false);
+  const s=document.getElementById('status');
+  s.className='error';
+  s.innerHTML='<div class="err-box"><b>⚠ Could not generate the brief.</b><br/>'+
+    msg+'</div>';
+  document.getElementById('deskStatus').textContent='Error';
+}
+
+function finishReport(payload){
+  setLoading(false);
+  const report=document.getElementById('report');
+  if(payload.data){ renderReport(payload.data); }
+  else if(payload.raw){ renderFallback(payload.raw); }
+  else { showError('Respuesta vacía del servidor.'); return; }
+  document.getElementById('deskStatus').textContent='Published';
+  report.scrollIntoView({behavior:'smooth',block:'start'});
+}
+
+async function generateReport(){
+  const report=document.getElementById('report');
+  report.classList.add('hidden');report.innerHTML='';
+  setLoading(true);
+
+  // Identificador único para este informe
+  const jobId=(crypto.randomUUID?crypto.randomUUID():('job-'+Date.now()+'-'+Math.random().toString(36).slice(2)));
+
+  try{
+    // 1) Lanzamos la función de fondo (devuelve enseguida, sin esperar al informe)
+    const launch=await fetch('/.netlify/functions/generate-brief-background',{
+      method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({jobId})
+    });
+    // Las funciones de fondo responden 202 (aceptado). Cualquier 2xx vale.
+    if(launch.status>=400){
+      throw new Error('No se pudo iniciar el informe (HTTP '+launch.status+').');
+    }
+  }catch(err){
+    showError(err.message+' Revisa que la función esté desplegada.');
+    return;
+  }
+
+  // 2) Preguntamos cada 4 segundos si ya está listo (hasta ~4 minutos)
+  let attempts=0;
+  const MAX_ATTEMPTS=60; // 60 x 4s = 240s
+  const poll=setInterval(async ()=>{
+    attempts++;
+    if(attempts>MAX_ATTEMPTS){
+      clearInterval(poll);
+      showError('El informe está tardando demasiado. Vuelve a intentarlo en un momento.');
+      return;
+    }
+    try{
+      const r=await fetch('/.netlify/functions/get-brief?id='+encodeURIComponent(jobId));
+      if(!r.ok) return; // seguimos esperando
+      const j=await r.json();
+      if(j.status==='pending') return; // aún trabajando
+      clearInterval(poll);
+      if(j.status==='error'){ showError(j.error||'Error desconocido.'); return; }
+      finishReport(j); // status === 'done'
+    }catch(e){
+      // Fallo de red puntual: seguimos intentando
+    }
+  },4000);
+}
+
+function esc(s){return (s==null?'':String(s)).replace(/[&<>]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[c]));}
+
+function renderReport(d){
+  const report=document.getElementById('report');
+  const devs=d.developments||[];
+
+  /* edition meta */
+  document.getElementById('editionDate').textContent=d.edition_date||'—';
+  document.getElementById('editionNo').textContent='№ '+(new Date().getFullYear())+'·'+
+    String(Math.floor((Date.now()/86400000)%365)).padStart(3,'0');
+
+  /* ticker */
+  const heads=devs.map(x=>esc((x.country?x.country.toUpperCase()+': ':'')+x.headline));
+  const trackItems=[...heads,...heads].map(h=>'<span>'+h+'</span>').join('');
+  document.getElementById('tickerTrack').innerHTML=trackItems;
+  document.getElementById('ticker').classList.remove('idle');
+
+  /* region & confidence stats */
+  const regions=[...new Set(devs.map(x=>x.region))];
+  const regionCounts={};devs.forEach(x=>{regionCounts[x.region]=(regionCounts[x.region]||0)+1;});
+  const confCounts={High:0,Medium:0,Low:0};
+  devs.forEach(x=>{const c=(x.confidence||'').trim();if(confCounts[c]!==undefined)confCounts[c]++;});
+
+  let html='';
+
+  /* panorama */
+  html+='<section class="panorama"><div class="lbl">Panorama — State of the Board</div>'+
+        '<p>'+esc(d.panorama||'')+'</p>'+
+        '<div class="date">'+esc(d.edition_date||'')+'</div></section>';
+
+  /* dashboard stats */
+  html+='<div class="dash">'+
+    '<div class="stat"><div class="n">'+devs.length+'</div><div class="t">Developments tracked</div></div>'+
+    '<div class="stat"><div class="n">'+regions.length+'</div><div class="t">Macro-regions covered</div></div>'+
+    '<div class="stat"><div class="n">'+confCounts.High+'<small>/'+devs.length+'</small></div><div class="t">High-confidence calls</div></div>'+
+    '<div class="stat"><div class="n">'+(d.watchlist?d.watchlist.length:0)+'</div><div class="t">On the watchlist</div></div>'+
+  '</div>';
+
+  /* charts */
+  html+='<div class="charts">'+
+    '<div class="chart-cell"><h4>Coverage by Macro-Region</h4><div class="chart-wrap"><canvas id="chRegion"></canvas></div></div>'+
+    '<div class="chart-cell"><h4>Confidence Distribution</h4><div class="chart-wrap"><canvas id="chConf"></canvas></div></div>'+
+  '</div>';
+
+  /* dispatches header */
+  html+='<div class="sec-head"><h2>The Dispatches</h2><span class="rule"></span>'+
+        '<span class="count">'+devs.length+' Items · Ranked</span></div>';
+
+  html+='<div class="dispatches">';
+  devs.forEach(x=>{
+    const col=regionColor(x.region);
+    const conf=(x.confidence||'Medium').trim().toLowerCase();
+    const scen=(x.scenarios||[]).map(s=>
+      '<div class="scen"><div class="scen-top"><span class="lab">'+esc(s.label)+'</span>'+
+      '<span class="pct">'+esc(s.probability)+'%</span></div>'+
+      '<div class="scen-bar"><div class="scen-fill" data-w="'+(parseInt(s.probability)||0)+'"></div></div></div>'
+    ).join('');
+    const chips=(x.exposed_sectors||[]).map(c=>'<span class="chip">'+esc(c)+'</span>').join('');
+
+    html+='<article class="dispatch">'+
+      '<div class="d-rail">'+
+        '<div class="d-rank">'+esc(x.rank)+'<small>RANK</small></div>'+
+        '<div class="region-chip" style="background:'+col+'">'+esc(x.region)+'</div>'+
+      '</div>'+
+      '<div class="d-body">'+
+        '<div class="d-top"><span class="d-country">'+esc(x.country||'')+'</span>'+
+          '<span class="conf '+conf+'">'+esc(x.confidence||'')+' confidence</span></div>'+
+        '<h3 class="d-headline">'+esc(x.headline||'')+'</h3>'+
+        '<div class="d-field"><div class="k">What happened</div><div class="v">'+esc(x.what_happened||'')+'</div></div>'+
+        '<div class="d-grid">'+
+          '<div class="d-field"><div class="k">Why it matters</div><div class="v">'+esc(x.why_it_matters||'')+'</div></div>'+
+          '<div class="d-field"><div class="k">Strategic reading</div><div class="v">'+esc(x.reading||'')+'</div></div>'+
+        '</div>'+
+        (scen?'<div class="scenarios"><div class="k">Scenarios</div>'+scen+'</div>':'')+
+        (chips?'<div class="sectors"><div class="k">Exposed sectors / names</div><div class="chips">'+chips+'</div></div>':'')+
+        (x.memorable_fact?'<div class="fact"><div class="k">Dato para recordar</div><div class="v">'+esc(x.memorable_fact)+'</div></div>':'')+
+      '</div>'+
+    '</article>';
+  });
+  html+='</div>';
+
+  /* watchlist */
+  if(d.watchlist&&d.watchlist.length){
+    html+='<div class="watch"><div class="watch-head">Watchlist — Next 2–4 Weeks</div><ul>';
+    d.watchlist.forEach((w,i)=>{html+='<li><span class="n">'+(i+1)+'</span><span>'+esc(w)+'</span></li>';});
+    html+='</ul></div>';
+  }
+
+  /* colophon */
+  html+='<div class="colophon"><b>Sources & Method</b>'+
+    esc(d.sources_note||'Compiled via live web search across wire services, research institutes and primary data, with load-bearing facts triangulated across independent sources.')+
+    ' This brief is geopolitical analysis, not investment advice. Listed-company references describe analytical exposure to the events discussed, not recommendations to buy or sell. Markets may already reflect this information. Conduct your own research and consult a licensed adviser before any decision.</div>';
+
+  report.innerHTML=html;
+  report.classList.remove('hidden');
+
+  /* charts */
+  drawCharts(regionCounts,confCounts);
+
+  /* staggered reveal + scenario bar fill */
+  const cards=report.querySelectorAll('.dispatch');
+  cards.forEach((c,i)=>{c.style.animationDelay=(i*0.07)+'s';c.classList.add('in');});
+  setTimeout(()=>{report.querySelectorAll('.scen-fill').forEach(f=>{f.style.width=f.dataset.w+'%';});},400);
+}
+
+function drawCharts(regionCounts,confCounts){
+  const fontFamily="'Archivo',sans-serif";
+  Chart.defaults.font.family=fontFamily;
+  Chart.defaults.color='#6c6354';
+
+  /* horizontal bar — regions */
+  const rLabels=Object.keys(regionCounts);
+  new Chart(document.getElementById('chRegion'),{
+    type:'bar',
+    data:{labels:rLabels,
+      datasets:[{data:rLabels.map(r=>regionCounts[r]),
+        backgroundColor:rLabels.map(r=>regionColor(r)),
+        borderWidth:0,borderRadius:2,barThickness:18}]},
+    options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,
+      plugins:{legend:{display:false},tooltip:{
+        backgroundColor:'#0e1217',titleFont:{family:fontFamily},bodyFont:{family:fontFamily},
+        callbacks:{label:c=>' '+c.parsed.x+' item'+(c.parsed.x>1?'s':'')}}},
+      scales:{
+        x:{beginAtZero:true,ticks:{stepSize:1,precision:0},grid:{color:'#e4dccb'},border:{display:false}},
+        y:{grid:{display:false},border:{display:false},ticks:{font:{size:10,weight:'600'}}}}}
+  });
+
+  /* doughnut — confidence */
+  new Chart(document.getElementById('chConf'),{
+    type:'doughnut',
+    data:{labels:['High','Medium','Low'],
+      datasets:[{data:[confCounts.High,confCounts.Medium,confCounts.Low],
+        backgroundColor:['#1d6b4c','#a87b16','#9a2b2b'],borderColor:'#fbf8f2',borderWidth:3}]},
+    options:{responsive:true,maintainAspectRatio:false,cutout:'62%',
+      plugins:{legend:{position:'bottom',labels:{boxWidth:10,boxHeight:10,padding:14,
+        font:{size:11,weight:'600'},usePointStyle:true,pointStyle:'rectRounded'}},
+        tooltip:{backgroundColor:'#0e1217'}}}
+  });
+}
+
+function renderFallback(raw){
+  const report=document.getElementById('report');
+  const body=(window.marked&&marked.parse)?marked.parse(raw):('<pre style="white-space:pre-wrap">'+esc(raw)+'</pre>');
+  report.innerHTML='<div class="raw-fallback">'+body+'</div>';
+  report.classList.remove('hidden');
+}
+</script>
+</body>
+</html>
